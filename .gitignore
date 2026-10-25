@@ -15,5 +15,12 @@ traced_repos
 # Results
 results
 
+# Experiment outputs (generations/scores/logs and agent scratch workspaces)
+artifacts
+agent_workspaces
+
 # Test outputs
 .test_output
+
+# Local API credentials (*.secret.env stays ignored; secret.txt is now a template)
+*.secret.env

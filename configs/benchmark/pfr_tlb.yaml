@@ -1,0 +1,9 @@
+repositories:
+  - git_url: "/data/projects/math-harness-eval/rlm-env/pfr-src"
+    commit: "f6bdcac2365623d3667d3ff8fd8ddb7f95ce2313"
+    project_name: "PFR"
+    blueprint_cmd: null
+  - git_url: "/data/projects/math-harness-eval/rlm-env/tlb-src"
+    commit: "0f09ff100a06a5e4542181514bfff74213ae126b"
+    project_name: "TLB"
+    blueprint_cmd: null

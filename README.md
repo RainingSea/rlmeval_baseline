@@ -5,11 +5,7 @@ This repository features the code for the evaluation of neural theorem proving a
 ## Project setup
 
 > [!IMPORTANT]
-> Set the environment variables `GITHUB_ACCESS_TOKEN` (see [GitHub documentation](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#personal-access-tokens-classic)) and `OPENAI_API_KEY`.
-
-### Development inside Docker (recommended)
-
-In VS Code, run the **Dev Containers: Open Folder in Container...** command from the Command Palette (F1). The `.devcontainer` folder contains the necessary configuration and will take care of setting up the environment.
+> Set the environment variables `GITHUB_ACCESS_TOKEN` (see [GitHub documentation](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#personal-access-tokens-classic)) and `OPENAI_API_KEY`
 
 ### Local installation
 

@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+exec /root/miniconda3/envs/rlmeval/bin/python -m rlm_agent.cli "$@"

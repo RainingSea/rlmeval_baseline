@@ -1,0 +1,119 @@
+#!/usr/bin/env python3
+"""Minimal apply_patch implementation (codex patch protocol).
+
+Supports *** Begin Patch / *** Update File / *** Add File / *** Delete File
+with *** End Patch, hunks introduced by @@, context lines, +/- changes and
+*** Move to: renaming. Fails non-zero on any mismatch without writing files.
+"""
+import sys
+from pathlib import Path
+
+
+def parse(text: str):
+    lines = text.splitlines()
+    if not lines or lines[0].strip() != "*** Begin Patch":
+        raise SystemExit("apply_patch: missing *** Begin Patch")
+    ops = []
+    i = 1
+    while i < len(lines):
+        line = lines[i]
+        s = line.strip()
+        if s == "*** End Patch":
+            break
+        if s.startswith("*** Update File: "):
+            path = s[len("*** Update File: "):]
+            i += 1
+            move_to = None
+            if i < len(lines) and lines[i].strip().startswith("*** Move to: "):
+                move_to = lines[i].strip()[len("*** Move to: "):]
+                i += 1
+            hunks, i = parse_hunks(lines, i)
+            ops.append(("update", path, move_to, hunks))
+        elif s.startswith("*** Add File: "):
+            path = s[len("*** Add File: "):]
+            i += 1
+            body = []
+            while i < len(lines) and not lines[i].startswith("***"):
+                body.append(lines[i][1:] if lines[i].startswith("+") else lines[i])
+                i += 1
+            ops.append(("add", path, None, body))
+        elif s.startswith("*** Delete File: "):
+            ops.append(("delete", s[len("*** Delete File: "):], None, None))
+            i += 1
+        else:
+            raise SystemExit(f"apply_patch: unexpected line: {line!r}")
+    return ops
+
+
+def parse_hunks(lines, i):
+    hunks = []
+    cur = []
+    while i < len(lines):
+        line = lines[i]
+        if line.startswith("***"):
+            break
+        if line.startswith("@@"):
+            if cur:
+                hunks.append(cur)
+            cur = []
+        else:
+            cur.append(line)
+        i += 1
+    if cur:
+        hunks.append(cur)
+    return hunks, i
+
+
+def apply_hunks(old_lines, hunks):
+    new_lines = list(old_lines)
+    offset = 0
+    for hunk in hunks:
+        ctx = [l[1:] if l[:1] in "+-" else l for l in hunk if not l.startswith("@@")]
+        pre = [l[1:] for l in hunk if l.startswith(" ")]
+        # locate by the combined context (before + after)
+        wanted = [l[1:] for l in hunk if l.startswith(" ") or l.startswith("-")]
+        if not wanted:
+            raise SystemExit("apply_patch: hunk without context")
+        pos = find_sub(new_lines, wanted, offset)
+        if pos is None:
+            pos = find_sub(new_lines, wanted, 0)
+        if pos is None:
+            raise SystemExit("apply_patch: context not found")
+        replaced = [l[1:] for l in hunk if not l.startswith("-")]
+        new_lines[pos : pos + len(wanted)] = replaced
+        offset = pos + len(replaced)
+    return new_lines
+
+
+def find_sub(hay, needle, start):
+    n = len(needle)
+    for i in range(start, len(hay) - n + 1):
+        if hay[i : i + n] == needle:
+            return i
+    return None
+
+
+def main():
+    text = sys.stdin.read()
+    ops = parse(text)
+    for op, path, move_to, payload in ops:
+        p = Path(path)
+        if op == "add":
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text("\n".join(payload) + "\n")
+            print(f"apply_patch: added {path}")
+        elif op == "delete":
+            p.unlink(missing_ok=True)
+            print(f"apply_patch: deleted {path}")
+        else:
+            old = p.read_text().splitlines()
+            new = apply_hunks(old, payload)
+            target = Path(move_to) if move_to else p
+            if move_to:
+                p.unlink()
+            target.write_text("\n".join(new) + "\n")
+            print(f"apply_patch: updated {path}" + (f" -> {move_to}" if move_to else ""))
+
+
+if __name__ == "__main__":
+    main()

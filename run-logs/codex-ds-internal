@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -euo pipefail
+export DS_API_KEY='dummy'
+export NO_PROXY='127.0.0.1,localhost,::1,s-20261015140447-hc45n.ailab-ma4agismall.pjh-service.org.cn'
+export no_proxy="$NO_PROXY"
+unset HTTP_PROXY HTTPS_PROXY ALL_PROXY http_proxy https_proxy all_proxy
+CODEX=${CODEX_BIN:-/usr/local/bin/codex}
+if [ "${1:-}" = "--version" ]; then exec "$CODEX" "$@"; fi
+if [ "${1:-}" = "exec" ]; then
+  shift
+  exec "$CODEX" exec \
+    --config 'model_provider="dsv4p"' \
+    --config 'model_providers.dsv4p.name="DS v4 Pro (internal hc45n)"' \
+    --config 'model_providers.dsv4p.base_url="http://127.0.0.1:4102/v1"' \
+    --config 'model_providers.dsv4p.env_key="DS_API_KEY"' \
+    --config 'model_providers.dsv4p.wire_api="responses"' \
+    --config 'model_providers.dsv4p.requires_openai_auth=false' \
+    --config 'shell_environment_policy.set.PATH="/data/projects/math-harness-eval/RLMEval/run-logs/bin:/usr/local/bin:/usr/bin:/bin"' \
+    "$@"
+fi
+exec "$CODEX" "$@"
